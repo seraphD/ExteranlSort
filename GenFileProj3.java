@@ -16,7 +16,7 @@ import java.util.*;
  * @author Haosu wang/whaosu@vt.edu
  * @version 1.0
  */
-public class GenFile_Proj3 {
+public class GenFileProj3 {
     
     /**
      * number of records in a block

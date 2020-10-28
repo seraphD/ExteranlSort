@@ -31,8 +31,8 @@ public class ExternalsortTest extends TestCase {
         
         args1[0] = "testSort.bin";
         args2[0] = "testSort.bin";
-        args2[1] = "16";
-        GenFile_Proj3.generateBinFile(args2);
+        args2[1] = "500";
+        GenFileProj3.generateBinFile(args2);
         
         Externalsort sorter = new Externalsort();
         assertNotNull(sorter);
@@ -53,7 +53,7 @@ public class ExternalsortTest extends TestCase {
         int block = 80;
         args2[1] = "" + block;
     
-        GenFile_Proj3.generateBinFile(args2);
+        GenFileProj3.generateBinFile(args2);
         
         Externalsort sorter = new Externalsort();
         assertNotNull(sorter);

@@ -288,6 +288,10 @@ public class Externalsort {
                         o = work.pop(c);
                     }
                     else {
+                        if (work.isEmpty()) {
+                            break;
+                        }
+                        
                         o = work.pop();
                     }
                     
@@ -331,8 +335,10 @@ public class Externalsort {
             DataOutputStream dosRun = new DataOutputStream(
                 new BufferedOutputStream(new FileOutputStream("tempRun.bin")));
             
+            int newLength = (int)Math.ceil((double)run / heapSize);
+            int[] newRunLength = new int[newLength];
             // multiway-merging
-            for (int i = 0; i < Math.ceil((double)run / heapSize); i++) {
+            for (int i = 0; i < newLength; i++) {
                 int mergedRun = Math.min(heapSize, run - heapSize * i);
                 
                 for (int j = 0; j < mergedRun; j++) {
@@ -368,7 +374,7 @@ public class Externalsort {
                     outputBuffer.append(c);
                     
                     if (outputBuffer.isFull()) {
-
+                        cnt++;
                         while (!outputBuffer.isEmpty()) {
                             byte[] b;
                             b = outputBuffer.pop().getCompleteRecord();
@@ -378,16 +384,12 @@ public class Externalsort {
                     }
                 }
                 
-                if (mergedRun == heapSize) {
-                    l[i] *= heapSize;
-                }
-                else {
-                    l[i] *= mergedRun;
-                }
-                
+                newRunLength[i] = cnt;
+                cnt = 0;
             }
             
             run = (int)Math.ceil((double)run / 8);
+            l = newRunLength;
             
             dosRun.flush();
             dosRun.close();
