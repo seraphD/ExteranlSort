@@ -74,7 +74,8 @@ public class ExternalsortTest extends TestCase {
      * @return                    is the file sorted
      * @throws IOException
      */
-    private boolean isSorted(FileInputStream fis, int recordSize, int block) 
+    public static boolean isSorted(
+        FileInputStream fis, int recordSize, int block) 
         throws IOException {
         
         Record previous = null;

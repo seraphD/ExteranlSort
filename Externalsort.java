@@ -66,6 +66,26 @@ public class Externalsort {
     }
     
     /**
+     * using random file access read a record
+     * @param raf                random file access object
+     * @param recordSize         size of a record
+     * @throws IOException
+     */
+    public static void readRecord(RandomAccessFile raf, int recordSize) 
+        throws IOException {
+        
+        byte[] b = new byte[recordSize];
+        
+        raf.read(b);
+        ByteBuffer buff = ByteBuffer.wrap(b);
+        
+        long val = buff.getLong(0);
+        double key = buff.getDouble(recordSize / 2);
+        
+        System.out.print(val + " " + key);
+    }
+    
+    /**
      * if creating a run is over
      * @param pos           current position in each block
      * @param run           number of runs are being merged
@@ -155,11 +175,10 @@ public class Externalsort {
             
             b.append(c);
         }
-        
     }
     
     /**
-     * read a block a run into working 
+     * read a block a run into working when combining runs
      * @param work              working memory
      * @param raf               randomAccessFile
      * @param run               number of current run
@@ -205,7 +224,7 @@ public class Externalsort {
      * @param des               target file name
      * @throws IOException
      */
-    private static void copy(String src, String des) throws IOException {
+    public static void copy(String src, String des) throws IOException {
         File s = new File(src);
         File d = new File(des);
         
@@ -215,6 +234,37 @@ public class Externalsort {
         
         inputChannel.close();
         outputChannel.close();
+    }
+    
+    /**
+     * print first record in each block
+     * @param raf               random file access object
+     * @param blockSize         block size
+     * @param recordSize        size of a record
+     * @param block             how much block in the file
+     * @throws IOException
+     */
+    private static void printRecords(
+        RandomAccessFile raf, int blockSize, int recordSize, int block) 
+        throws IOException {
+        
+        long pos = 0;
+        long jump = blockSize * recordSize;
+        
+        for (int i = 0; i < block; i++) {
+            raf.seek(pos);
+            readRecord(raf, recordSize);
+            
+            if ((i + 1) % 5 == 0) {
+                System.out.println();
+            }
+            else {
+                System.out.print(" ");
+            }
+            
+            pos += jump;
+        }
+        
     }
     
 
@@ -358,7 +408,6 @@ public class Externalsort {
                     
                     pos[inx]++;
                     if (pos[inx] == blockSize) {
-                        
                         blkCnt[inx]++;
                         if (blkCnt[inx] < l[inx]) {
                             readBlock(
@@ -398,6 +447,8 @@ public class Externalsort {
         }
         
         copy("runFile.bin", args[0]);
+        
+        printRecords(raf, blockSize, recordSize, l[0]);
         
         fis.close();
         fos.close();

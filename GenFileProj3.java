@@ -67,5 +67,32 @@ public class GenFileProj3 {
         file.flush();
         file.close();
     }
+    
+    /**
+     * generate testing files using a given keys array
+     * @param args              arguments
+     * @param keys              keys array
+     * @throws IOException 
+     */
+    public static void generateBinFile(String[] args, double[] keys) 
+        throws IOException {
+        long val;
+        double val2;
+        
+        int filesize = Integer.parseInt(args[1]); // Size of file in blocks
+        DataOutputStream file = new DataOutputStream(new BufferedOutputStream(
+            new FileOutputStream(args[0])));
+
+        for (int i = 0; i < filesize; i++) {
+            for (int j = 0; j < NUMRECS; j++) {
+                val = (long)(randLong());
+                file.writeLong(val);
+                val2 = keys[i * NUMRECS + j];
+                file.writeDouble(val2);
+            }
+        }
+        file.flush();
+        file.close();
+    }
 
 }
