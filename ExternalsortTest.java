@@ -71,6 +71,7 @@ public class ExternalsortTest extends TestCase {
      * check if records are all in ascending order
      * @param fis                 file input stream
      * @param recordSize          size of a record
+     * @param block               number of blocks in file 
      * @return                    is the file sorted
      * @throws IOException
      */
