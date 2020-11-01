@@ -181,21 +181,22 @@ public class Externalsort {
      * read a block a run into working when combining runs
      * @param work              working memory
      * @param raf               randomAccessFile
-     * @param run               number of current run
+     * @param runCur            index in the current merging
      * @param block             number of block in the run
      * @param heapSize          heap size
+     * @param p                 block numbers before the run
      * @param blockSize         block size
      * @param runSize           length of the run
      * @param recordSize        length of a record
      * @throws IOException
      */
     public static void readBlock(Heap work, RandomAccessFile raf, 
-        int run, int block, int heapSize, 
+        int runCur, int block, int heapSize, int p,
         int blockSize, int[] runSize, int recordSize) 
         throws IOException {
         
-        long pos = block;
-        for (int i = 0; i < run; i++) {
+        long pos = block + p;
+        for (int i = 0; i < runCur; i++) {
             pos += runSize[i];
         }
         
@@ -213,7 +214,7 @@ public class Externalsort {
             
             Record c = new Record(b);
             
-            int inx = (run % heapSize) * blockSize + i;
+            int inx = (runCur % heapSize) * blockSize + i;
             work.setRecord(inx, c);
         }
     }
@@ -253,6 +254,7 @@ public class Externalsort {
         
         for (int i = 0; i < block; i++) {
             raf.seek(pos);
+            
             readRecord(raf, recordSize);
             
             if ((i + 1) % 5 == 0) {
@@ -314,12 +316,15 @@ public class Externalsort {
         // number of runs
         int run = 0;
         
+        int lastRunL = 0;
+        
         while (fis.available() > 0 || !work.isEmpty()) {
             src.clear();
             
             // fill the working memory
             readBlock(work, fis, recordSize);
             work.heapify();
+            boolean emptyWork = false;
             
             // create a run
             while (cnt < heapSize) {
@@ -339,6 +344,8 @@ public class Externalsort {
                     }
                     else {
                         if (work.isEmpty()) {
+                            emptyWork = true;
+                            lastRunL = cnt;
                             break;
                         }
                         
@@ -346,6 +353,10 @@ public class Externalsort {
                     }
                     
                     outputBuffer.append(o);
+                }
+                
+                if (emptyWork) {
+                    break;
                 }
                 
                 writeRunFileBuffer(src, outputBuffer, recordSize);
@@ -359,6 +370,7 @@ public class Externalsort {
                 channel.write(src);
             }
             
+            lastRunL = cnt;
             cnt = 0;
             run++;
             
@@ -368,9 +380,9 @@ public class Externalsort {
         
         RandomAccessFile raf = new RandomAccessFile("runFile.bin", "rw");
         
-        // current position in each block
+        // current merging position in each block
         int[] pos = new int[heapSize];
-        // current block in each run
+        // current merging block in each run
         int[] blkCnt = new int[heapSize];
         // length of current run
         int[] l = new int[run];
@@ -378,6 +390,7 @@ public class Externalsort {
         for (int i = 0; i < run; i++) {
             l[i] = heapSize;
         }
+        l[run - 1] = lastRunL;
         
         // bug fix
         // different length run
@@ -387,6 +400,8 @@ public class Externalsort {
             
             int newLength = (int)Math.ceil((double)run / heapSize);
             int[] newRunLength = new int[newLength];
+            int p = 0;
+            
             // multiway-merging
             for (int i = 0; i < newLength; i++) {
                 int mergedRun = Math.min(heapSize, run - heapSize * i);
@@ -396,48 +411,53 @@ public class Externalsort {
                     blkCnt[j] = 0;
                     
                     // bug check
-                    int curRun = i * heapSize + j;
+                    // int curRun = i * heapSize + j;
                     readBlock(
-                        work, raf, curRun, 0, 
-                        heapSize, blockSize, l, recordSize);
+                        work, raf, j, 0, 
+                        heapSize, p, blockSize, l, recordSize);
                 }
                 
                 while (!isOver(pos, run, mergedRun, blockSize)) {
                     int inx = choose(work, pos, blockSize, mergedRun);
+                    // bug fix
                     int recordInx = inx * blockSize + pos[inx];
+                    
+                    Record c = work.getRecord(recordInx);
+                    outputBuffer.append(c);
                     
                     pos[inx]++;
                     if (pos[inx] == blockSize) {
                         blkCnt[inx]++;
-                        if (blkCnt[inx] < l[inx]) {
+                        int curLenght = i * heapSize + inx;
+                        
+                        if (blkCnt[inx] < l[curLenght]) {
                             readBlock(
                                 work, raf, inx, blkCnt[inx], 
-                                heapSize, blockSize, l, recordSize);
+                                heapSize, p, blockSize, l, recordSize);
                             
                             pos[inx] = 0;
                         }
                         
                     }
                     
-                    Record c = work.getRecord(recordInx);
-                    outputBuffer.append(c);
-                    
                     if (outputBuffer.isFull()) {
                         cnt++;
+                        
                         while (!outputBuffer.isEmpty()) {
                             byte[] b;
                             b = outputBuffer.pop().getCompleteRecord();
                             dosRun.write(b);
                         }
-                        
                     }
+                    
                 }
                 
                 newRunLength[i] = cnt;
+                p += cnt;
                 cnt = 0;
             }
             
-            run = (int)Math.ceil((double)run / 8);
+            run = (int)Math.ceil((double)run / heapSize);
             l = newRunLength;
             
             dosRun.flush();

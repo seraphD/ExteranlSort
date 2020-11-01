@@ -50,7 +50,7 @@ public class ExternalsortTest extends TestCase {
         
         args1[0] = "testSort.bin";
         args2[0] = "testSort.bin";
-        int block = 80;
+        int block = 500;
         args2[1] = "" + block;
     
         GenFileProj3.generateBinFile(args2);
@@ -94,6 +94,8 @@ public class ExternalsortTest extends TestCase {
                 if (previous.compareTo(c) > 0) {
                     return false;
                 }
+                
+                previous = c;
             }
         }
         

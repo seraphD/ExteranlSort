@@ -25,7 +25,7 @@ public class OrderTest extends TestCase {
      */
     public void testOrder() throws IOException, CloneNotSupportedException {
         int blockSize = 512;
-        int block = 16;
+        int block = 400;
         double[] keys = new double[blockSize * block];
         String[] args = new String[2];
         args[0] = "orderTest.bin";
@@ -33,9 +33,11 @@ public class OrderTest extends TestCase {
         
         for (int i = 0; i < blockSize * block; i++) {
             keys[i] = blockSize * block - i;
+            // keys[i] = i;
         }
         
         GenFileProj3.generateBinFile(args, keys);
+        // GenFileProj3.generateBinFile(args);
         
         String[] args1 = new String[1];
         args1[0] = args[0];
@@ -51,6 +53,5 @@ public class OrderTest extends TestCase {
         
         fis.close();
     }
-    
     
 }

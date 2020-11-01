@@ -63,6 +63,14 @@ public class Heap {
     }
     
     /**
+     * cur getter
+     * @return     cur
+     */
+    public int getCur() {
+        return cur;
+    }
+    
+    /**
      * set record
      * @param pos   position in the array
      * @param c     record to be set
